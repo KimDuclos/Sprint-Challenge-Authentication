@@ -1,29 +1,29 @@
-const db =  require('../database/dbConfig');
+const db = require('../database/dbConfig');
 
 module.exports = {
-    getUserByName, 
-    addUser
+  getUserByName,
+  addUser
 };
 
-// GET user by name
+// GET user - name
 function getUserByName(filter) {
-    return db('users')
+  return db('users')
     .where(filter)
     .first();
 }
 
 // INSERT user
 function addUser(user) {
-    return db('users')
+  return db('users')
     .insert(user)
     .then(ids => {
-        return getUserById(ids[0]);
+      return getUserById(ids[0]);
     });
 }
 
-// GET user by ID
+// GET user - id
 function getUserById(id) {
-    return db('users')
+  return db('users')
     .where({ id })
     .first();
 }
