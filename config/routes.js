@@ -10,6 +10,23 @@ module.exports = server => {
 
 function register(req, res) {
   // implement user registration
+
+  // get username and password from body
+  const credentials = req.body; 
+
+  // create hash from password
+  const hash = bcrypt.hashsync(credentials.password, 4);
+
+  // override password with hashed password
+  credentials.password = hash;
+
+  // save user to db
+  db('users')
+    .insert(credentials)
+    .then(ids => {
+      res.status(201).json(ids);
+    })
+    .catch(err => res.json(err));
 }
 
 function login(req, res) {
