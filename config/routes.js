@@ -1,5 +1,8 @@
 const axios = require('axios');
+const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
 
+const db = require('./routesModels');
 const { authenticate } = require('../auth/authenticate');
 
 module.exports = server => {
@@ -8,51 +11,61 @@ module.exports = server => {
   server.get('/api/jokes', authenticate, getJokes);
 };
 
-function register(req, res) {   // MVP IMPLEMENT REGISTER
-  // implement user registration
+function register(req, res) {
+// implement user registration
+  const user = req.body;
+  const hash = bcrypt.hashSync(user.password, 8);
+  user.password = hash;
 
-  // get username and password from body
-  const credentials = req.body; 
-
-  // create hash from password
-  const hash = bcrypt.hashsync(credentials.password, 4);
-
-  // override password with hashed password
-  credentials.password = hash;
-
-  // save user to db
-  db('users')
-    .insert(credentials)
-    .then(ids => {
-      res.status(201).json(ids);
-    })
-    .catch(err => res.json(err));
+  if (user.username && user.password) { // check creds
+    db.addUser(user)
+      .then(user => {
+        res.status(201).json(user);
+      })
+      .catch(err => {
+        res.status(500).json({ message: 'Cannot save user.' });
+      });
+  } else {
+    res.status(401).json({ message: 'Username and password required.' });
+  }
 }
 
-function login(req, res) {  // MVP IMPLEMENT LOGIN
+function login(req, res) {
   // implement user login
+  const { username, password } = req.body;
 
-  // get creds
-  const credentials = req.body;
-
-  db('users')
-    .where({ username: credentials.username })
-    .first()
-    .then (user => { 
-      // check creds
-      if (user && bcrypt.compareSync(credentials.password, user.password)) {
-        const token = generateToken(user);
-        res.status(200).json({ message: 'Logged In', token });
-      } else {
-        res.status(401).json({ message: 'Git outta here with those bad creds!' })
-      }
-    })
-    .catch(err => res.status(500).json(err));
+  if (username && password) {  // check creds
+    db.getUserByName({ username })
+      .then(user => {
+        if (bcrypt.compareSync(password, user.password)) {
+          const token = generateToken(user);
+          res.status(200).json({ message: "Logged in", token });
+        } else {
+          res.status(401).json({ message: 'Username or password is invalid.' });
+        }
+      })
+      .catch(err => {
+        res.status(500).json({ message: 'Could not log in.' });
+      });
+  } else {
+    res.status(401).json({ message: 'Username and password require.' });
+  }
 }
 
-function getJokes(req, res) {
+function generateToken(user) {  // token
+  const payload = {
+    subject: user.id,
+    username: user.username
+  };
+  const options = {
+    expiresIn: '1d'
+  };
+  return jwt.sign(payload, secret, options);
+}
+
+function getJokes(req, res) {  // joke list
   const requestOptions = {
-    headers: { accept: 'application/json' },
+    headers: { accept: 'application/json' }
   };
 
   axios

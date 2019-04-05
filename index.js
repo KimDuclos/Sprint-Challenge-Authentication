@@ -1,8 +1,4 @@
-const express = require('express');
-const cors = require('cors');
-
-const configRoutes = require('./config/routes');
-
+    
 require('dotenv').config(); // load .env variables
 
 const server = require('./api/server.js');
