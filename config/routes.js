@@ -8,7 +8,7 @@ module.exports = server => {
   server.get('/api/jokes', authenticate, getJokes);
 };
 
-function register(req, res) {
+function register(req, res) {   // MVP IMPLEMENT REGISTER
   // implement user registration
 
   // get username and password from body
@@ -29,8 +29,25 @@ function register(req, res) {
     .catch(err => res.json(err));
 }
 
-function login(req, res) {
+function login(req, res) {  // MVP IMPLEMENT LOGIN
   // implement user login
+
+  // get creds
+  const credentials = req.body;
+
+  db('users')
+    .where({ username: credentials.username })
+    .first()
+    .then (user => { 
+      // check creds
+      if (user && bcrypt.compareSync(credentials.password, user.password)) {
+        const token = generateToken(user);
+        res.status(200).json({ message: 'Logged In', token });
+      } else {
+        res.status(401).json({ message: 'Git outta here with those bad creds!' })
+      }
+    })
+    .catch(err => res.status(500).json(err));
 }
 
 function getJokes(req, res) {
